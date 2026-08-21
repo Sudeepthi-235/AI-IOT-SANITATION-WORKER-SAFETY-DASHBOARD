@@ -138,3 +138,363 @@ H₂S increasing
 SpO₂ decreasing
         +
 Heart rate increasing
+When these trends occur together, the system generates a:
+
+Predictive Safety Warning
+
+This helps supervisors identify possible gas-related distress before the situation becomes critical.
+
+Live Map
+
+The Live Map provides a geographic view of the municipal operation.
+
+Built using:
+
+Leaflet.js
+OpenStreetMap
+
+The map displays:
+
+Worker locations
+Hazard zones
+Emergency exits
+Hospitals
+Rescue teams
+Manholes
+Sewer/drainage locations
+Active worker routes
+
+Critical workers are highlighted so supervisors can quickly identify where assistance is required.
+
+Emergency Response System
+
+The system provides a dedicated emergency workflow for dangerous situations.
+
+Emergency scenarios include:
+
+Gas leak
+Low SpO₂
+Worker fall
+High temperature
+Sewer flooding
+SOS activation
+Multiple worker emergency
+
+When a critical situation occurs, the system can:
+
+Identify the affected worker.
+Calculate the current risk level.
+Display the reason for the danger.
+Identify nearby workers.
+Identify the nearest rescue team.
+Suggest a rescue route.
+Trigger an emergency alert.
+Log the event.
+Provide recommended action to the supervisor.
+Emergency Simulation Center
+
+The project contains a dedicated simulation interface for testing and demonstrations.
+
+Supervisors can simulate:
+
+Gas Leak
+Low SpO₂
+Fall Detection
+High Temperature
+Flooding
+SOS
+Multiple Worker Emergency
+Reset Simulation
+
+This allows the complete emergency workflow to be demonstrated without requiring physical wearable devices.
+
+Emergency Audio Alert
+
+The dashboard uses the browser's Web Audio API to generate an emergency siren.
+
+This provides a fallback mechanism when:
+
+An audio file is unavailable.
+Browser autoplay restrictions prevent normal audio playback.
+The application is running without external audio assets.
+
+The alarm is triggered when a worker enters a critical safety state.
+
+Worker Exposure Management System
+
+The Worker Exposure Management System (WEMS) tracks cumulative exposure.
+
+The system monitors:
+
+Hazardous zone hours
+Gas exposure events
+Oxygen drop events
+High temperature exposure
+Critical alerts
+
+An exposure risk score is calculated for each worker.
+
+Exposure Recommendations
+
+Depending on accumulated exposure, the system can recommend:
+
+SAFE FOR DUTY
+LIMITED DUTY
+ROTATE WORKER
+TEMPORARILY REMOVE
+
+This helps prevent workers from repeatedly being assigned to high-risk environments.
+
+Intelligent Worker Rotation
+
+When a worker reaches a high exposure level or enters a warning/danger state, the system searches for available safe workers.
+
+Example:
+
+Worker:
+Vijay Sharma (W004)
+
+
+Status:
+High Risk
+
+
+Recommendation:
+Rotate Worker
+
+
+Suggested Replacement:
+Rajesh Kumar (W001)
+
+If no safe replacement is available, the system recommends evacuation instead of rotation.
+
+SaniSafe Safety Assistant
+
+The dashboard includes a lightweight local safety assistant.
+
+The assistant can answer operational questions such as:
+
+Who is at highest risk?
+
+
+Which zone is dangerous?
+
+
+Who should be rotated?
+
+
+Why is W004 critical?
+
+
+How many emergencies occurred today?
+
+The assistant evaluates the current worker state and returns a deterministic safety response.
+
+The demonstration does not require an external AI API.
+
+Municipal Analytics
+
+The Analytics dashboard provides operational safety insights.
+
+Safety Compliance
+
+Tracks safety compliance over time.
+
+Incidents by Zone
+
+Identifies locations with higher incident frequency.
+
+Worker Risk Distribution
+
+Shows the number of workers in:
+
+Safe
+Warning
+High
+Critical
+Rescue Response Time
+
+Displays average emergency response performance.
+
+Municipal Metrics
+
+Examples include:
+
+Total operations
+Total incidents
+Safety compliance rate
+Average rescue response time
+High-risk zones
+Reports
+
+The platform provides municipal safety reporting.
+
+Daily Report
+
+Includes:
+
+Total workers
+Active incidents
+Alerts
+Rescue events
+Total work hours
+Weekly Health Report
+
+Includes:
+
+Worker exposure
+Exposure risk level
+High-risk workers
+Recommended rest
+Monthly Municipal Report
+
+Includes:
+
+Hazardous operations
+Incident count
+Compliance rate
+Average rescue response time
+High-risk locations
+Event History
+
+The Event History section maintains a record of operational safety events.
+
+Events can include:
+
+Warnings
+Critical alerts
+SOS events
+Gas leaks
+Falls
+Emergency responses
+Resolved incidents
+System events
+
+Supervisors can filter events based on severity and event type.
+
+System Architecture
+                  ┌─────────────────────────┐
+                  │     Wearable Devices    │
+                  │                         │
+                  │ HR | SpO₂ | Temperature │
+                  │ Stress | GPS | Battery  │
+                  └────────────┬────────────┘
+                               │
+                               ▼
+                  ┌─────────────────────────┐
+                  │ Environmental Sensors   │
+                  │                         │
+                  │ H₂S | CO | CH₄ | O₂     │
+                  │ Temperature | Water     │
+                  └────────────┬────────────┘
+                               │
+                               ▼
+                  ┌─────────────────────────┐
+                  │      Flask Backend       │
+                  │                         │
+                  │ Worker Simulator        │
+                  │ Risk Engine             │
+                  │ Exposure Engine         │
+                  │ Emergency Engine        │
+                  └────────────┬────────────┘
+                               │
+                               ▼
+                  ┌─────────────────────────┐
+                  │   Safety Intelligence   │
+                  │                         │
+                  │ Risk Score 0–100        │
+                  │ Predictive Warning      │
+                  │ Worker Rotation         │
+                  │ Emergency Response      │
+                  └────────────┬────────────┘
+                               │
+                               ▼
+        ┌───────────────────────────────────────────┐
+        │          Municipal Control Room           │
+        │                                           │
+        │ Dashboard | Map | Health | Analytics      │
+        │ Emergency | Reports | Event History       │
+        └───────────────────────────────────────────┘
+Technology Stack
+Backend
+Python
+Flask
+REST APIs
+Frontend
+HTML5
+CSS3
+JavaScript
+Jinja2 Templates
+Mapping
+Leaflet.js
+OpenStreetMap
+Charts
+Chart.js
+Browser APIs
+Web Audio API
+Current Data Layer
+Stateful in-memory simulation
+Project Structure
+AI-IOT-SANITATION-WORKER-SAFETY-DASHBOARD/
+│
+├── app.py
+├── requirements.txt
+├── README.md
+│
+├── templates/
+│   ├── layout.html
+│   ├── index.html
+│   ├── live_map.html
+│   ├── worker_health.html
+│   ├── health_protection.html
+│   ├── emergency_simulation.html
+│   ├── analytics.html
+│   ├── reports.html
+│   └── event_history.html
+│
+└── static/
+    ├── style.css
+    ├── dashboard.js
+    ├── health.js
+    └── reports.js
+Installation
+1. Clone the Repository
+git clone https://github.com/Sudeepthi-235/AI-IOT-SANITATION-WORKER-SAFETY-DASHBOARD.git
+2. Open the Project
+cd AI-IOT-SANITATION-WORKER-SAFETY-DASHBOARD
+3. Create a Virtual Environment
+Windows
+python -m venv venv
+venv\Scripts\activate
+Linux / macOS
+python3 -m venv venv
+source venv/bin/activate
+4. Install Dependencies
+pip install -r requirements.txt
+5. Start the Application
+python app.py
+6. Open the Dashboard
+http://127.0.0.1:5001
+Emergency Scenario Testing
+
+After starting the application, open:
+
+/emergency-simulation
+
+Select an emergency scenario such as:
+
+Gas Leak
+Low SpO₂
+Fall
+High Temperature
+Flooding
+SOS
+Multiple Worker Emergency
+
+Return to the Control Room to observe the change in worker status and risk level.
+
+Use:
+
+Reset Simulation
+
+to restore the workers to their initial state.
