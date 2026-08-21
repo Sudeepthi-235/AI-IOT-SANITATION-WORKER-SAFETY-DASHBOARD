@@ -1,122 +1,140 @@
-# Municipal Sanitation Worker Safety Intelligence Platform
+# AI-IoT Sanitation Worker Safety Intelligence Platform
 
-A high-fidelity, municipal control-room dashboard for real-time safety monitoring, bio-telemetry, environmental sensing, threat warning, and automated rescue routing for workers operating in sewer systems.
+> An AI-powered municipal safety monitoring dashboard designed to protect sanitation workers operating inside hazardous sewer and drainage environments.
 
-## Features
-
-### 🏠 Safety Control Room View (Home Screen)
-- **Real-time Worker Status Panel**: Live telemetry tracking with instant 3-second polling updates.
-- **Biometrics & Wearable Telemetry**: Heart rate, SpO₂ oxygen saturation, body temperature, stress indexes, device connection, and battery level tracking.
-- **Atmospheric Gas Alerts**: Real-time detection of toxic Hydrogen Sulfide ($H_2S$), Carbon Monoxide ($CO$), and combustible Methane ($CH_4$).
-- **Color-coded Status System**:
-  - 🟢 **Safe**: Routine monitoring.
-  - 🟡 **Warning**: Duty rotation advised.
-  - 🔴 **Danger/Critical**: Evacuate and initiate rescue workflow.
-  - ⚫ **Offline**: Wearable device disconnected.
-
-### 🧠 Safety Risk Engine (0-100 Score)
-- Calculates a dynamic safety index score using biometric readings, gas levels, sewer temperature, and hazard duration.
-- **Risk Classification Levels**:
-  - **0-30**: LOW (Safe)
-  - **31-60**: MEDIUM (Warning)
-  - **61-80**: HIGH (Warning/Rotation Mandatory)
-  - **81-100**: CRITICAL (Immediate Evacuation)
-- **Predictive Threat Alarm**: Detects dangerous biometrics and atmospheric trends (rising $H_2S$ + dropping $SpO_2$ + rising HR) to sound early warning alarms before distress occurs.
-
-### 🤖 Safety AI Assistant
-- Local, deterministic dashboard query helper. Requires no external AI API or internet connection.
-- Instantly answers supervisor questions such as:
-  - *"Who is at highest risk?"*
-  - *"Which zone is dangerous?"*
-  - *"Why is W004 critical?"*
-  - *"Who should be rotated?"*
-  - *"How many emergencies occurred today?"*
-
-### 🗺️ Live Tactical Location Map (Leaflet.js)
-- Displays active worker coordinates, fixed manhole entries, medical facilities, safe exits, and high-risk hazard zones.
-- **Rescue Workflow**: On critical emergency triggers:
-  - Focuses/zooms map onto the affected worker.
-  - Identifies the **nearest coworker** and distance.
-  - Identifies the **nearest rescue team station**.
-  - Draws a **tactical route line** on the map from the rescue station to the worker's coordinates.
-
-### 🧪 Emergency Simulation Center (`/emergency-simulation`)
-- Active control deck to trigger stateful, realistic emergency scenarios:
-  - Gas Leak overrides.
-  - Hypoxia (Low $SpO_2$) simulation.
-  - vertical Fall Detection alarm.
-  - High Sewer Temp alerts.
-  - Flooding / Water rising.
-  - Manual SOS panic trigger.
-  - Concurrent multi-worker emergencies.
-  - Reset controls to restore normal operations.
-
-### 📊 Municipal Safety Analytics (`/analytics`)
-- High-level dashboards and interactive compliance statistics.
-- Responsive **Chart.js** data widgets:
-  - Safety Compliance trend line graph.
-  - Alarm distribution by operations zone.
-  - Worker risk category distributions.
-  - Live high-risk locations registry.
-
-### 🛡️ Worker Exposure Management System (WEMS)
-- Tracks weekly accumulated exposure metrics: hazard hours, gas exposures, oxygen drops, heat logs, and danger alerts.
-- **Duty Rotations**: Automatically suggests backup worker rotation pairs when active workers exceed safe weekly thresholds.
-
-## Project Structure
-
-```
-sanitation-safety-dashboard/
-│
-├── app.py                     # Stateful Python Flask Server & Safety Risk Engine
-│
-├── templates/                 # Page Layouts (Jinja2 Block Inheritance)
-│   ├── layout.html            # Main base shell & sidebar navigation
-│   ├── index.html             # Control Room main dashboard
-│   ├── live_map.html          # Tactical map view
-│   ├── worker_health.html     # Worker biometrics details table
-│   ├── health_protection.html # WEMS & Duty Rotation panel
-│   ├── emergency_simulation.html # Simulator center control deck
-│   ├── analytics.html         # Compliance dashboards (Chart.js)
-│   ├── event_history.html     # Log timeline & severity filters
-│   └── reports.html           # Daily/Weekly/Monthly safety reporting
-│
-├── static/                    # Assets & Client-side Scripting
-│   ├── style.css              # Control-room dark theme style system
-│   ├── dashboard.js           # Map updates, AI assistant, and rescue routes
-│   ├── health.js              # WEMS and rotation suggestions
-│   └── reports.js             # Reports rendering and PDF alerts
-│
-└── requirements.txt           # Python dependencies
-```
-
-## Installation & Running
-
-1. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Run the server**:
-   ```bash
-   python app.py
-   ```
-
-3. **Access the portal**:
-   Open browser at `http://127.0.0.1:5001/`
-
-## API Endpoints
-
-- `GET /api/workers/status` - Stateful updates of all workers.
-- `GET /api/worker/<worker_id>` - Fetch specific worker vitals.
-- `GET /api/exposure` - WEMS exposure indices and rotation matches.
-- `GET /api/events` - Get system log events.
-- `POST /api/event/log` - Log a manual/automatic audit event.
-- `POST /api/simulation/trigger` - Force hazard overrides.
-- `POST /api/assistant/ask` - Local safety helper Q&A processor.
-- `GET /api/analytics/data` - Analytics dataset for Chart.js.
-- `GET /api/reports/daily` | `/weekly` | `/monthly` - Retrieve audit reports.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Open%20Dashboard-2563EB?style=for-the-badge)](https://ai-iot-sanitation-worker-safety-dashboard.onrender.com)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/Sudeepthi-235/AI-IOT-SANITATION-WORKER-SAFETY-DASHBOARD)
 
 ---
-**Municipal Sanitation Worker Safety Intelligence Platform**
-*Protecting those who keep our cities clean and safe*
+
+## Live Demo
+
+🌐 **https://ai-iot-sanitation-worker-safety-dashboard.onrender.com**
+
+The deployed platform provides a simulated municipal control-room environment where supervisors can monitor worker health, environmental hazards, emergency situations, exposure levels, and rescue operations.
+
+---
+
+## Project Overview
+
+Sanitation workers operating inside sewers, manholes, drainage lines, and underground wastewater systems are exposed to serious occupational hazards.
+
+These include:
+
+- Toxic gases such as H₂S and CO
+- Low oxygen levels
+- Methane accumulation
+- Extreme temperatures
+- Sudden flooding
+- Falls and physical injuries
+- Excessive physiological stress
+- Long-term hazardous exposure
+- Communication and connectivity failures
+
+Traditional monitoring methods often depend heavily on manual supervision and periodic communication.
+
+This project proposes an **AI-IoT based safety intelligence platform** that continuously monitors simulated wearable and environmental sensor data and provides supervisors with actionable safety information.
+
+The system combines:
+
+**Worker Wearables + Environmental Sensors + Risk Analysis + Location Tracking + Emergency Response + Exposure Management + Analytics**
+
+into a single municipal control-room dashboard.
+
+---
+
+# Objectives
+
+The main objectives of the project are:
+
+1. Monitor sanitation worker health in real time.
+2. Detect dangerous environmental conditions.
+3. Calculate an individual worker safety risk score.
+4. Identify potentially dangerous trends before they become critical.
+5. Provide immediate emergency alerts.
+6. Assist supervisors during rescue operations.
+7. Monitor cumulative worker exposure.
+8. Recommend worker rotation when exposure becomes excessive.
+9. Provide historical safety and compliance analytics.
+10. Reduce response time during worker emergencies.
+
+---
+
+# Key Features
+
+## 1. Control Room Dashboard
+
+The main control room provides supervisors with a centralized view of all workers.
+
+### Monitoring Includes
+
+- Worker status
+- Heart rate
+- SpO₂
+- Body temperature
+- Stress level
+- H₂S concentration
+- CO concentration
+- Methane concentration
+- Environmental temperature
+- Water level
+- GPS status
+- Battery level
+- Network connectivity
+- Safety risk score
+
+### Worker Status
+
+| Status | Meaning |
+|---|---|
+| 🟢 Safe | Worker operating within safe limits |
+| 🟡 Warning | Increased risk requiring attention |
+| 🔴 Danger | Immediate intervention required |
+| ⚫ Offline | Wearable/device unavailable |
+
+---
+
+# AI Safety Risk Engine
+
+The platform includes a local safety risk engine that calculates a safety score from:
+
+**0–100**
+
+The score considers multiple worker and environmental parameters.
+
+### Risk Levels
+
+| Score | Risk Level | Recommended Action |
+|---:|---|---|
+| 0–30 | LOW | Safe for duty |
+| 31–60 | MEDIUM | Monitor and prepare rotation |
+| 61–80 | HIGH | Rotate worker to surface |
+| 81–100 | CRITICAL | Evacuate and initiate rescue |
+
+The risk engine considers:
+
+- Heart rate
+- SpO₂
+- H₂S
+- CO
+- CH₄
+- Temperature
+- Water level
+- Hazard exposure hours
+- Fall detection
+- SOS activation
+
+---
+
+# Predictive Safety Warning
+
+The system checks for dangerous combinations of sensor trends.
+
+One important combination is:
+
+```text
+H₂S increasing
+        +
+SpO₂ decreasing
+        +
+Heart rate increasing
