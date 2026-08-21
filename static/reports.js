@@ -1,112 +1,99 @@
-// Reports JavaScript
+// SaniSafe Safety Reports JavaScript
 
 document.addEventListener('DOMContentLoaded', function() {
-    updateTime();
-    setInterval(updateTime, 1000);
     loadDailyReport();
-    loadEventTimeline();
 });
 
-// Update current time
-function updateTime() {
-    const now = new Date();
-    const timeStr = now.toLocaleString('en-IN', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
-    document.getElementById('current-time').textContent = timeStr;
-}
-
-// Show report
+// Switch Report Types view
 function showReport(type) {
-    // Hide all reports
-    document.querySelectorAll('.report-container').forEach(container => {
-        container.style.display = 'none';
+    document.querySelectorAll('.report-container-card').forEach(card => {
+        card.style.display = 'none';
     });
-    
-    // Remove active class from all buttons
     document.querySelectorAll('.report-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     
-    // Show selected report
     document.getElementById(`${type}-report`).style.display = 'block';
     
-    // Add active class to clicked button
-    event.target.classList.add('active');
-    
-    // Load report data
+    // Add active layout class
     if (type === 'daily') {
+        document.getElementById('btn-report-daily').classList.add('active');
         loadDailyReport();
     } else if (type === 'weekly') {
+        document.getElementById('btn-report-weekly').classList.add('active');
         loadWeeklyReport();
+    } else if (type === 'monthly') {
+        document.getElementById('btn-report-monthly').classList.add('active');
+        loadMonthlyReport();
     }
 }
 
-// Load daily report
+// Fetch Daily Safety Report
 async function loadDailyReport() {
     try {
-        const response = await fetch('/api/reports/daily');
-        const data = await response.json();
+        const res = await fetch('/api/reports/daily');
+        const data = await res.json();
         
+        document.getElementById('daily-report-date').textContent = `Date: ${data.date}`;
         document.getElementById('daily-workers').textContent = data.total_workers;
         document.getElementById('daily-incidents').textContent = data.incidents;
         document.getElementById('daily-alerts').textContent = data.alerts;
         document.getElementById('daily-rescues').textContent = data.rescue_events;
-        document.getElementById('daily-hours').textContent = data.total_work_hours;
-    } catch (error) {
-        console.error('Error loading daily report:', error);
+        document.getElementById('daily-hours').textContent = data.total_work_hours + ' hrs';
+    } catch (e) {
+        console.error("Daily report fetch failed:", e);
     }
 }
 
-// Load weekly report
+// Fetch Weekly Exposure Report
 async function loadWeeklyReport() {
     try {
-        const response = await fetch('/api/reports/weekly');
-        const data = await response.json();
+        const res = await fetch('/api/reports/weekly');
+        const data = await res.json();
+        
+        document.getElementById('weekly-report-date').textContent = `Week audit range: ${data.week}`;
         
         const content = document.getElementById('weekly-content');
+        if (!content) return;
+        
+        let restSection = '';
+        if (data.recommended_rest.length > 0) {
+            restSection = `
+                <div class="high-risk-locations-box" style="margin-bottom:2rem;">
+                    <h4 style="color:var(--color-danger); font-size:1.1rem; font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> Workers Requiring Mandatory Rest Rotations</h4>
+                    <ul style="list-style: square; padding-left:1.5rem; margin-top:0.5rem; line-height:1.6;">
+                        ${data.recommended_rest.map(name => `<li style="color:var(--text-primary); font-weight:600;">${name}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        } else {
+            restSection = `
+                <div class="high-risk-locations-box" style="margin-bottom:2rem; border-color:var(--color-safe-bg); background:rgba(16, 185, 129, 0.05); color:var(--color-safe);">
+                    <h4 style="color:var(--color-safe);"><i class="fa-solid fa-circle-check"></i> Weekly Compliance Check</h4>
+                    <p style="color:var(--text-secondary); margin-top:0.25rem;">All active sanitation workers' exposure indices are within safe operating limits. No rest rotations required.</p>
+                </div>
+            `;
+        }
+        
         content.innerHTML = `
-            <div class="report-stats">
-                <div class="stat-card">
-                    <h4>Total Workers</h4>
-                    <div class="stat-value">${data.workers.length}</div>
-                </div>
-                <div class="stat-card danger">
-                    <h4>High Risk Workers</h4>
-                    <div class="stat-value">${data.high_risk_count}</div>
-                </div>
-            </div>
+            ${restSection}
             
-            <div style="background: #fef2f2; padding: 1.5rem; border-radius: 8px; margin-top: 2rem;">
-                <h4 style="color: #ef4444; margin-bottom: 1rem; font-size: 1.3rem;">Workers Requiring Rest</h4>
-                <ul style="list-style: none; font-size: 1.1rem;">
-                    ${data.recommended_rest.map(name => `<li style="padding: 0.5rem 0;">• ${name}</li>`).join('')}
-                </ul>
-            </div>
-            
-            <div style="margin-top: 2rem;">
-                <h4 style="font-size: 1.3rem; margin-bottom: 1rem;">All Workers Exposure Summary</h4>
+            <div class="table-container">
                 <table class="exposure-table">
                     <thead>
                         <tr>
-                            <th>Worker</th>
-                            <th>Risk Score</th>
-                            <th>Risk Level</th>
-                            <th>Recommendation</th>
+                            <th>Worker Name</th>
+                            <th>Exposure Score Index</th>
+                            <th>Safety Classification</th>
+                            <th>Action Recommendation</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${data.workers.map(w => `
                             <tr>
-                                <td>${w.name}</td>
-                                <td>${w.risk_score}</td>
-                                <td><span class="risk-badge ${w.risk_level.toLowerCase()}">${w.risk_level}</span></td>
+                                <td><strong>${w.name}</strong> (ID: ${w.worker_id})</td>
+                                <td><strong>Index Score: ${w.risk_score}</strong></td>
+                                <td><span class="risk-badge ${w.risk_level.toLowerCase()}">${w.risk_level.toUpperCase()}</span></td>
                                 <td>${w.recommendation}</td>
                             </tr>
                         `).join('')}
@@ -114,39 +101,38 @@ async function loadWeeklyReport() {
                 </table>
             </div>
         `;
-    } catch (error) {
-        console.error('Error loading weekly report:', error);
+    } catch (e) {
+        console.error("Weekly report load failed:", e);
     }
 }
 
-// Load event timeline
-async function loadEventTimeline() {
+// Fetch Monthly Reports
+async function loadMonthlyReport() {
     try {
-        const response = await fetch('/api/events');
-        const events = await response.json();
+        const res = await fetch('/api/reports/monthly');
+        const data = await res.json();
         
-        const timeline = document.getElementById('event-timeline');
-        timeline.innerHTML = '';
+        document.getElementById('monthly-report-date').textContent = `Month audit range: ${data.month}`;
+        document.getElementById('monthly-ops').textContent = data.hazardous_operations;
+        document.getElementById('monthly-incidents').textContent = data.incident_count;
+        document.getElementById('monthly-compliance').textContent = data.compliance_rate + '%';
+        document.getElementById('monthly-rescue').textContent = data.avg_rescue_time;
         
-        events.reverse().slice(0, 30).forEach(event => {
-            const item = document.createElement('div');
-            item.className = `timeline-item ${event.type}`;
-            item.innerHTML = `
-                <div style="font-size: 0.95rem; color: #6b7280; margin-bottom: 0.25rem;">
-                    ${new Date(event.timestamp).toLocaleString()}
-                </div>
-                <div style="font-size: 1.05rem; color: #374151;">
-                    <strong>${event.worker_id}:</strong> ${event.message}
-                </div>
-            `;
-            timeline.appendChild(item);
-        });
-    } catch (error) {
-        console.error('Error loading timeline:', error);
+        const locsList = document.getElementById('monthly-risk-locations-list');
+        if (locsList) {
+            locsList.innerHTML = '';
+            data.high_risk_locations.forEach(loc => {
+                const li = document.createElement('li');
+                li.innerHTML = `<i class="fa-solid fa-circle-nodes" style="color:var(--color-danger); margin-right:8px;"></i> ${loc}`;
+                locsList.appendChild(li);
+            });
+        }
+    } catch (e) {
+        console.error("Monthly report load failed:", e);
     }
 }
 
-// Download report
+// Download PDF trigger
 function downloadReport(type) {
-    alert(`📥 Downloading ${type} report...\n\nReport will be generated as PDF and downloaded to your system.`);
+    alert(`📥 PDF Audit Report Generation:\n\nPreparing SaniSafe AI formatted ${type} safety PDF.\nDownloading file to local download directories.`);
 }

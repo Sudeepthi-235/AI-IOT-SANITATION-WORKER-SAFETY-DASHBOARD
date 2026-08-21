@@ -1,107 +1,128 @@
-// Health Protection JavaScript
+// SaniSafe WEMS & Duty Rotation JavaScript
 
 document.addEventListener('DOMContentLoaded', function() {
-    updateTime();
-    setInterval(updateTime, 1000);
-    loadExposureData();
-    setInterval(loadExposureData, 10000); // Update every 10 seconds
+    loadWemsData();
+    setInterval(loadWemsData, 6000); // update every 6 seconds
 });
 
-// Update current time
-function updateTime() {
-    const now = new Date();
-    const timeStr = now.toLocaleString('en-IN', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
-    document.getElementById('current-time').textContent = timeStr;
-}
-
-// Load exposure data
-async function loadExposureData() {
+async function loadWemsData() {
     try {
-        const response = await fetch('/api/exposure');
-        const data = await response.json();
+        const res = await fetch('/api/exposure');
+        const data = await res.json();
         
-        displayExposureSummary(data);
-        displayExposureTable(data);
-        displayRotationTable(data);
-    } catch (error) {
-        console.error('Error loading exposure data:', error);
+        updateWemsSummary(data);
+        renderWemsTable(data);
+        renderRotationTable(data);
+    } catch (e) {
+        console.error("WEMS exposure load failed:", e);
     }
 }
 
-// Display exposure summary
-function displayExposureSummary(data) {
-    const counts = {
-        low: 0,
-        medium: 0,
-        high: 0
+// Update WEMS Exposure metrics cards
+function updateWemsSummary(data) {
+    let low = 0, medium = 0, high = 0;
+    
+    data.forEach(w => {
+        if (w.risk_level === 'Low') low++;
+        else if (w.risk_level === 'Medium') medium++;
+        else if (w.risk_level === 'High' || w.risk_level === 'Critical') high++;
+    });
+    
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
     };
     
-    data.forEach(worker => {
-        const level = worker.risk_level.toLowerCase();
-        counts[level]++;
-    });
-    
-    document.getElementById('low-risk-count').textContent = counts.low;
-    document.getElementById('medium-risk-count').textContent = counts.medium;
-    document.getElementById('high-risk-count').textContent = counts.high;
+    setVal('low-risk-count', low);
+    setVal('medium-risk-count', medium);
+    setVal('high-risk-count', high);
 }
 
-// Display exposure table
-function displayExposureTable(data) {
+// Populate Weekly Exposure Table
+function renderWemsTable(data) {
     const tbody = document.getElementById('exposure-table-body');
+    if (!tbody) return;
     tbody.innerHTML = '';
     
-    data.forEach(worker => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${worker.worker_id}</td>
-            <td>${worker.name}</td>
-            <td>${worker.exposure_data.hazard_hours} hrs</td>
-            <td>${worker.exposure_data.gas_exposures}</td>
-            <td>${worker.exposure_data.oxygen_drops}</td>
-            <td>${worker.exposure_data.temp_exposures}</td>
-            <td>${worker.exposure_data.danger_alerts}</td>
-            <td><strong>${worker.risk_score}</strong></td>
-            <td><span class="risk-badge ${worker.risk_level.toLowerCase()}">${worker.risk_level}</span></td>
-            <td>${worker.recommendation}</td>
+    data.forEach(w => {
+        const tr = document.createElement('tr');
+        
+        tr.innerHTML = `
+            <td><strong>${w.worker_id}</strong></td>
+            <td><strong>${w.name}</strong></td>
+            <td>${w.exposure_data.hazard_hours.toFixed(1)} hrs</td>
+            <td>${w.exposure_data.gas_exposures} times</td>
+            <td>${w.exposure_data.oxygen_drops} instances</td>
+            <td>${w.exposure_data.temp_exposures} instances</td>
+            <td>${w.exposure_data.danger_alerts} alerts</td>
+            <td><strong>${w.risk_score}</strong></td>
+            <td><span class="risk-badge ${w.risk_level.toLowerCase()}">${w.risk_level.toUpperCase()}</span></td>
+            <td>${w.recommendation}</td>
         `;
-        tbody.appendChild(row);
+        tbody.appendChild(tr);
     });
 }
 
-// Display rotation table
-function displayRotationTable(data) {
+// Coordinate Intelligent Worker Rotation suggestions
+function renderRotationTable(data) {
     const tbody = document.getElementById('rotation-table-body');
+    if (!tbody) return;
     tbody.innerHTML = '';
     
-    const dutyTypes = ['Low Risk Zone', 'Medium Risk Zone', 'High Risk Zone', 'Rest Day'];
+    // Sort candidates for rotation (lower exposure index is better)
+    const sortedCandidates = [...data].sort((a, b) => a.risk_score - b.risk_score);
     
-    data.forEach((worker, index) => {
-        const row = document.createElement('tr');
+    data.forEach(w => {
+        const tr = document.createElement('tr');
         
-        let nextDuty;
-        if (worker.risk_level === 'High') {
-            nextDuty = 'Rest Day';
-        } else if (worker.risk_level === 'Medium') {
-            nextDuty = 'Low Risk Zone';
+        let needsRotation = w.risk_level === 'High' || w.risk_level === 'Critical';
+        let dutyHtml = '';
+        let replHtml = '';
+        let actionBtn = '';
+        
+        if (needsRotation) {
+            // Find best replacement: lowest risk, available (not itself)
+            let replacement = sortedCandidates.find(cand => 
+                cand.worker_id !== w.worker_id && 
+                cand.risk_level === 'Low'
+            );
+            
+            dutyHtml = `<span class="risk-badge-mini critical" style="background:var(--color-danger-bg); color:var(--color-danger);"><i class="fa-solid fa-person-circle-exclamation"></i> MANDATORY REST</span>`;
+            if (replacement) {
+                replHtml = `<strong>${replacement.name} (${replacement.worker_id})</strong><br><span style="font-size:0.75rem; color:var(--color-safe);">Backup available (Risk Score: ${replacement.risk_score})</span>`;
+                actionBtn = `<button class="btn-table-action" onclick="executeRotation('${w.worker_id}', '${replacement.worker_id}')"><i class="fa-solid fa-rotate"></i> Swap Duty</button>`;
+            } else {
+                replHtml = `<span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation"></i> No Safe Backup!</span>`;
+                actionBtn = `<button class="btn-table-action" style="border-color:#ef4444; color:#ef4444;" onclick="executeRotation('${w.worker_id}', null)"><i class="fa-solid fa-circle-minus"></i> Force Evacuate</button>`;
+            }
+        } else if (w.risk_level === 'Medium') {
+            dutyHtml = `<span class="risk-badge-mini warning" style="background:var(--color-warning-bg); color:var(--color-warning);">LIMITED DUTY</span>`;
+            replHtml = `<span style="color:var(--text-secondary);">Rotations prepared</span>`;
+            actionBtn = `<span style="color:var(--text-secondary); font-size:0.8rem;">Monitor closely</span>`;
         } else {
-            nextDuty = dutyTypes[index % dutyTypes.length];
+            dutyHtml = `<span class="risk-badge-mini safe" style="background:var(--color-safe-bg); color:var(--color-safe);"><i class="fa-solid fa-circle-check"></i> ACTIVE DUTY</span>`;
+            replHtml = `<span style="color:var(--text-secondary);">Optimal safety level</span>`;
+            actionBtn = `<span style="color:var(--color-safe); font-size:0.8rem;"><i class="fa-solid fa-shield-halved"></i> Active</span>`;
         }
         
-        row.innerHTML = `
-            <td>${worker.name}</td>
-            <td><span class="risk-badge ${worker.risk_level.toLowerCase()}">${worker.risk_level}</span></td>
-            <td>${worker.recommendation}</td>
-            <td><strong>${nextDuty}</strong></td>
+        tr.innerHTML = `
+            <td>
+                <strong>${w.name}</strong><br>
+                <span style="font-size:0.75rem; color:var(--text-secondary);">${w.worker_id}</span>
+            </td>
+            <td><strong>Index: ${w.risk_score}</strong> (${w.risk_level})</td>
+            <td>${dutyHtml}</td>
+            <td>${replHtml}</td>
+            <td>${actionBtn}</td>
         `;
-        tbody.appendChild(row);
+        tbody.appendChild(tr);
     });
+}
+
+function executeRotation(originalId, replacementId) {
+    if (replacementId) {
+        alert(`🔄 AI Rotation initialized:\n\nActive worker (ID ${originalId}) has been rotated out.\nReplacement worker (ID ${replacementId}) dispatched to site.`);
+    } else {
+        alert(`🚨 EMERGENCY ORDER:\n\nActive worker (ID ${originalId}) ordered to return to surface immediately! Duty suspended due to excessive index risk.`);
+    }
 }

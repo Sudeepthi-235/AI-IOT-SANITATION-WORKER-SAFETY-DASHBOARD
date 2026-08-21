@@ -1,176 +1,122 @@
-# Municipal Sanitation Worker Safety Monitoring Dashboard
+# Municipal Sanitation Worker Safety Intelligence Platform
 
-A professional web-based monitoring dashboard for supervisors to monitor smart wearable safety badges worn by sanitation workers working inside sewer and drainage systems.
+A high-fidelity, municipal control-room dashboard for real-time safety monitoring, bio-telemetry, environmental sensing, threat warning, and automated rescue routing for workers operating in sewer systems.
 
 ## Features
 
-### 🏠 Control Room View (Home Screen)
-- **Real-time Worker Status Panel**: Large visual cards showing each worker's status
+### 🏠 Safety Control Room View (Home Screen)
+- **Real-time Worker Status Panel**: Live telemetry tracking with instant 3-second polling updates.
+- **Biometrics & Wearable Telemetry**: Heart rate, SpO₂ oxygen saturation, body temperature, stress indexes, device connection, and battery level tracking.
+- **Atmospheric Gas Alerts**: Real-time detection of toxic Hydrogen Sulfide ($H_2S$), Carbon Monoxide ($CO$), and combustible Methane ($CH_4$).
 - **Color-coded Status System**:
-  - 🟢 Green = Safe
-  - 🟡 Yellow = Warning
-  - 🔴 Red = Immediate Danger (blinking with alert sound)
-  - ⚫ Grey = Offline
-- **Live Health Data**: Heart rate, SpO₂, body stress indicator
-- **Environment Monitoring**: Toxic gas levels, temperature, water level detection
-- **Work Safety Info**: Safe time remaining, exit distance, AI instructions
+  - 🟢 **Safe**: Routine monitoring.
+  - 🟡 **Warning**: Duty rotation advised.
+  - 🔴 **Danger/Critical**: Evacuate and initiate rescue workflow.
+  - ⚫ **Offline**: Wearable device disconnected.
 
-### 📍 Live Map View
-- Real-time location tracking of all workers
-- Color-coded worker markers
-- Danger workers highlighted prominently
-- Nearest coworker identification
-- Rescue route suggestions
+### 🧠 Safety Risk Engine (0-100 Score)
+- Calculates a dynamic safety index score using biometric readings, gas levels, sewer temperature, and hazard duration.
+- **Risk Classification Levels**:
+  - **0-30**: LOW (Safe)
+  - **31-60**: MEDIUM (Warning)
+  - **61-80**: HIGH (Warning/Rotation Mandatory)
+  - **81-100**: CRITICAL (Immediate Evacuation)
+- **Predictive Threat Alarm**: Detects dangerous biometrics and atmospheric trends (rising $H_2S$ + dropping $SpO_2$ + rising HR) to sound early warning alarms before distress occurs.
 
-### 🚨 Emergency Response System
-- Automatic danger detection and alerts
-- Alert sound playback
-- Emergency panel with worker details
-- Rescue assistance coordination
-- Voice communication system
-- Nearest coworker highlighting
-- Emergency event logging
+### 🤖 Safety AI Assistant
+- Local, deterministic dashboard query helper. Requires no external AI API or internet connection.
+- Instantly answers supervisor questions such as:
+  - *"Who is at highest risk?"*
+  - *"Which zone is dangerous?"*
+  - *"Why is W004 critical?"*
+  - *"Who should be rotated?"*
+  - *"How many emergencies occurred today?"*
+
+### 🗺️ Live Tactical Location Map (Leaflet.js)
+- Displays active worker coordinates, fixed manhole entries, medical facilities, safe exits, and high-risk hazard zones.
+- **Rescue Workflow**: On critical emergency triggers:
+  - Focuses/zooms map onto the affected worker.
+  - Identifies the **nearest coworker** and distance.
+  - Identifies the **nearest rescue team station**.
+  - Draws a **tactical route line** on the map from the rescue station to the worker's coordinates.
+
+### 🧪 Emergency Simulation Center (`/emergency-simulation`)
+- Active control deck to trigger stateful, realistic emergency scenarios:
+  - Gas Leak overrides.
+  - Hypoxia (Low $SpO_2$) simulation.
+  - vertical Fall Detection alarm.
+  - High Sewer Temp alerts.
+  - Flooding / Water rising.
+  - Manual SOS panic trigger.
+  - Concurrent multi-worker emergencies.
+  - Reset controls to restore normal operations.
+
+### 📊 Municipal Safety Analytics (`/analytics`)
+- High-level dashboards and interactive compliance statistics.
+- Responsive **Chart.js** data widgets:
+  - Safety Compliance trend line graph.
+  - Alarm distribution by operations zone.
+  - Worker risk category distributions.
+  - Live high-risk locations registry.
 
 ### 🛡️ Worker Exposure Management System (WEMS)
-- Weekly exposure data tracking:
-  - Time in hazardous zones
-  - Gas exposure levels
-  - Oxygen drop events
-  - High temperature exposure
-  - Danger alert count
-- **Exposure Risk Score**: Low / Medium / High
-- **Automatic Recommendations**:
-  - Safe for duty
-  - Limited duty
-  - Replace temporarily
-- **Auto Worker Rotation Panel**: Prevents repeated high-risk assignments
+- Tracks weekly accumulated exposure metrics: hazard hours, gas exposures, oxygen drops, heat logs, and danger alerts.
+- **Duty Rotations**: Automatically suggests backup worker rotation pairs when active workers exceed safe weekly thresholds.
 
-### 📊 Reports Section
-- **Daily Report**: Incidents, alerts, rescue events
-- **Weekly Health Report**: Exposure scores, recommended rest days
-- **Monthly Municipal Report**: Total operations, high-risk locations, safety compliance
-- **Event History Timeline**: Complete log of warnings, emergencies, voice alerts, SOS events
+## Project Structure
 
-## Installation
-
-1. **Install Python dependencies**:
-```bash
-cd sanitation-safety-dashboard
-pip install -r requirements.txt
+```
+sanitation-safety-dashboard/
+│
+├── app.py                     # Stateful Python Flask Server & Safety Risk Engine
+│
+├── templates/                 # Page Layouts (Jinja2 Block Inheritance)
+│   ├── layout.html            # Main base shell & sidebar navigation
+│   ├── index.html             # Control Room main dashboard
+│   ├── live_map.html          # Tactical map view
+│   ├── worker_health.html     # Worker biometrics details table
+│   ├── health_protection.html # WEMS & Duty Rotation panel
+│   ├── emergency_simulation.html # Simulator center control deck
+│   ├── analytics.html         # Compliance dashboards (Chart.js)
+│   ├── event_history.html     # Log timeline & severity filters
+│   └── reports.html           # Daily/Weekly/Monthly safety reporting
+│
+├── static/                    # Assets & Client-side Scripting
+│   ├── style.css              # Control-room dark theme style system
+│   ├── dashboard.js           # Map updates, AI assistant, and rescue routes
+│   ├── health.js              # WEMS and rotation suggestions
+│   └── reports.js             # Reports rendering and PDF alerts
+│
+└── requirements.txt           # Python dependencies
 ```
 
-2. **Run the application**:
-```bash
-python app.py
-```
+## Installation & Running
 
-3. **Access the dashboard**:
-```
-http://localhost:5001
-```
+1. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Dashboard Pages
+2. **Run the server**:
+   ```bash
+   python app.py
+   ```
 
-### 1. Control Room (/)
-Main monitoring interface with:
-- Live worker status cards
-- Interactive map
-- Real-time event log
-- Emergency alerts
-
-### 2. Health Protection (/health-protection)
-Worker Exposure Management System with:
-- Exposure summary cards
-- Weekly exposure data table
-- Auto rotation recommendations
-
-### 3. Reports (/reports)
-Comprehensive reporting with:
-- Daily, weekly, and monthly reports
-- Event history timeline
-- Downloadable PDF reports
-
-## Design Features
-
-✅ **Clean Government Dashboard Style**
-✅ **Large Readable Fonts** (1.1rem - 2.5rem)
-✅ **Color-Driven UI** (Green/Yellow/Red status system)
-✅ **Minimal Typing Required** (Click-based interface)
-✅ **Large Monitor Optimized** (1800px max-width)
-✅ **Real-time Auto-Updating** (3-10 second intervals)
-✅ **Non-Technical Interface** (Simple, visual, decision-support focused)
-
-## Technology Stack
-
-- **Backend**: Python Flask
-- **Frontend**: HTML5, CSS3, JavaScript
-- **Mapping**: Leaflet.js (OpenStreetMap)
-- **Real-time Updates**: AJAX polling
-- **Responsive Design**: CSS Grid & Flexbox
+3. **Access the portal**:
+   Open browser at `http://127.0.0.1:5001/`
 
 ## API Endpoints
 
-- `GET /api/workers/status` - Get all workers' real-time status
-- `GET /api/worker/<worker_id>` - Get detailed worker data
-- `GET /api/exposure` - Get exposure data for all workers
-- `GET /api/events` - Get event history log
-- `POST /api/event/log` - Log a new event
-- `GET /api/reports/daily` - Generate daily report
-- `GET /api/reports/weekly` - Generate weekly health report
-
-## Simulated Data
-
-The dashboard currently uses simulated data for demonstration purposes:
-- 6 workers with randomized status
-- Realistic vital signs and environmental data
-- Dynamic risk scenarios (70% safe, 20% warning, 10% danger)
-- Exposure tracking and risk scoring
-
-## Production Deployment
-
-For production use:
-1. Replace simulated data with real wearable device API integration
-2. Implement actual Twilio/SMS alert system
-3. Add database persistence (PostgreSQL/MySQL)
-4. Implement user authentication
-5. Add SSL/HTTPS
-6. Configure proper logging and monitoring
-7. Set up backup and disaster recovery
-
-## Safety Features
-
-🚨 **Automatic Danger Detection**
-📢 **Voice Alert System**
-🚑 **Rescue Coordination**
-📊 **Health Exposure Tracking**
-🔄 **Auto Worker Rotation**
-📝 **Complete Event Logging**
-📈 **Compliance Reporting**
-
-## Browser Compatibility
-
-- Chrome (Recommended)
-- Firefox
-- Edge
-- Safari
-
-## Screen Resolution
-
-Optimized for:
-- Large control room monitors (1920x1080 and above)
-- Tablets (landscape mode)
-- Desktop computers
-
-## Support
-
-For issues or questions, contact the municipal IT department.
-
-## License
-
-Municipal Government Use Only
+- `GET /api/workers/status` - Stateful updates of all workers.
+- `GET /api/worker/<worker_id>` - Fetch specific worker vitals.
+- `GET /api/exposure` - WEMS exposure indices and rotation matches.
+- `GET /api/events` - Get system log events.
+- `POST /api/event/log` - Log a manual/automatic audit event.
+- `POST /api/simulation/trigger` - Force hazard overrides.
+- `POST /api/assistant/ask` - Local safety helper Q&A processor.
+- `GET /api/analytics/data` - Analytics dataset for Chart.js.
+- `GET /api/reports/daily` | `/weekly` | `/monthly` - Retrieve audit reports.
 
 ---
-
-**Built for Municipal Sanitation Worker Safety**
-*Protecting those who keep our cities clean*
-LIVE DEMO : sanitation-safety-dashboard.vercel.app
+**Municipal Sanitation Worker Safety Intelligence Platform**
+*Protecting those who keep our cities clean and safe*

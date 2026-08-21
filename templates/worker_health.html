@@ -1,0 +1,120 @@
+{% extends "layout.html" %}
+
+{% block title %}Worker Health — SaniSafe{% endblock %}
+{% block header_title %}Worker health{% endblock %}
+
+{% block content %}
+<div class="health-page-container">
+    <div class="table-card">
+        <div class="card-header">
+            <h2>Real-time biometrics &amp; wearable monitoring</h2>
+            <p>Live telemetry from all active wearable devices. Updating every 3 seconds.</p>
+        </div>
+        <div class="table-container">
+            <table class="exposure-table">
+                <thead>
+                    <tr>
+                        <th>Worker</th>
+                        <th>Status</th>
+                        <th>Vitals</th>
+                        <th>Gas levels</th>
+                        <th>Risk score</th>
+                        <th>Battery</th>
+                        <th>Network</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="health-table-body">
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Worker detail modal -->
+<div id="worker-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <div id="worker-details"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+<script>
+async function loadHealthTable() {
+    try {
+        const res  = await fetch('/api/workers/status');
+        const data = await res.json();
+        const tbody = document.getElementById('health-table-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        data.forEach(w => {
+            const tr = document.createElement('tr');
+
+            let vitalsHtml = '—';
+            let gasHtml    = '—';
+
+            if (w.status !== 'offline') {
+                const hrC   = w.vitals.heart_rate > 100 ? 'text-danger fw-bold' : '';
+                const spo2C = w.vitals.spo2 < 95        ? 'text-danger fw-bold' : '';
+                vitalsHtml = `<div class="vitals-telem">
+                    <span>HR: <span class="${hrC}">${w.vitals.heart_rate} bpm</span></span>
+                    <span>SpO₂: <span class="${spo2C}">${w.vitals.spo2}%</span></span>
+                    <span>Temp: ${w.vitals.body_temp.toFixed(1)}°C</span>
+                </div>`;
+
+                const h2sC = w.environment.h2s > 5 ? 'text-danger fw-bold' : '';
+                gasHtml = `<div class="gas-telem">
+                    <span>H₂S: <span class="${h2sC}">${w.environment.h2s.toFixed(1)} ppm</span></span>
+                    <span>CO: ${w.environment.co} ppm</span>
+                    <span>CH₄: ${w.environment.ch4.toFixed(2)}%</span>
+                </div>`;
+            }
+
+            const battC = w.device.battery < 20 ? 'text-danger' : '';
+            tr.innerHTML = `
+                <td>
+                    <div class="worker-name-cell">
+                        <span class="name">${w.name}</span>
+                        <span class="location">${w.worker_id} — ${w.location}</span>
+                    </div>
+                </td>
+                <td><span class="status-indicator-badge ${w.status}">${w.status.charAt(0).toUpperCase() + w.status.slice(1)}</span></td>
+                <td>${vitalsHtml}</td>
+                <td>${gasHtml}</td>
+                <td><span class="risk-badge-mini ${w.risk_level.toLowerCase()}">${w.risk_score} (${w.risk_level})</span></td>
+                <td><span class="battery-telem ${battC}"><i class="fa-solid fa-battery-half"></i> ${Math.round(w.device.battery)}%</span></td>
+                <td>
+                    <div class="network-cell">
+                        <span>${w.device.network}</span>
+                        <span style="color:var(--text-muted);font-size:.72rem;">${w.device.last_sync}</span>
+                    </div>
+                </td>
+                <td>
+                    <button class="btn-table-action" onclick="showWorkerDetails('${w.worker_id}')">
+                        <i class="fa-solid fa-circle-info"></i> Details
+                    </button>
+                </td>`;
+            tbody.appendChild(tr);
+        });
+    } catch (e) { console.error(e); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadHealthTable();
+    setInterval(loadHealthTable, 3000);
+
+    document.querySelector('.close-modal').onclick = () => {
+        document.getElementById('worker-modal').style.display = 'none';
+    };
+    window.onclick = e => {
+        if (e.target.classList.contains('modal'))
+            e.target.style.display = 'none';
+    };
+});
+</script>
+{% endblock %}

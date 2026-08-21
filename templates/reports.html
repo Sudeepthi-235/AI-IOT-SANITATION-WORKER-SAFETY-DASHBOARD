@@ -1,129 +1,113 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports - Safety Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <header class="dashboard-header">
-        <div class="header-content">
-            <h1>🏛️ Municipal Sanitation Worker Safety Monitoring</h1>
-            <div class="header-info">
-                <span id="current-time"></span>
-            </div>
+{% extends "layout.html" %}
+
+{% block title %}Reports — SaniSafe{% endblock %}
+{% block header_title %}Safety reports{% endblock %}
+
+{% block content %}
+<div class="reports-page-container">
+
+    <div class="report-selector-card">
+        <h3>Select report period</h3>
+        <div class="report-selector">
+            <button class="report-btn active" id="btn-report-daily" onclick="showReport('daily')">
+                <i class="fa-solid fa-calendar-day"></i> Daily report
+            </button>
+            <button class="report-btn" id="btn-report-weekly" onclick="showReport('weekly')">
+                <i class="fa-solid fa-calendar-week"></i> Weekly report
+            </button>
+            <button class="report-btn" id="btn-report-monthly" onclick="showReport('monthly')">
+                <i class="fa-solid fa-calendar-days"></i> Monthly report
+            </button>
         </div>
-        <nav class="main-nav">
-            <a href="/" class="nav-link">Control Room</a>
-            <a href="/health-protection" class="nav-link">Health Protection</a>
-            <a href="/reports" class="nav-link active">Reports</a>
-        </nav>
-    </header>
-
-    <div class="dashboard-container">
-        <section class="reports-section">
-            <h2>📊 Safety Reports</h2>
-
-            <!-- Report Type Selector -->
-            <div class="report-selector">
-                <button class="report-btn active" onclick="showReport('daily')">Daily Report</button>
-                <button class="report-btn" onclick="showReport('weekly')">Weekly Health Report</button>
-                <button class="report-btn" onclick="showReport('monthly')">Monthly Municipal Report</button>
-            </div>
-
-            <!-- Daily Report -->
-            <div id="daily-report" class="report-container">
-                <div class="report-header">
-                    <h3>📅 Daily Safety Report</h3>
-                    <button class="btn-download" onclick="downloadReport('daily')">⬇️ Download PDF</button>
-                </div>
-                <div class="report-content">
-                    <div class="report-stats">
-                        <div class="stat-card">
-                            <h4>Total Workers</h4>
-                            <div class="stat-value" id="daily-workers">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Incidents</h4>
-                            <div class="stat-value" id="daily-incidents">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Alerts</h4>
-                            <div class="stat-value" id="daily-alerts">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Rescue Events</h4>
-                            <div class="stat-value" id="daily-rescues">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Work Hours</h4>
-                            <div class="stat-value" id="daily-hours">-</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Weekly Report -->
-            <div id="weekly-report" class="report-container" style="display: none;">
-                <div class="report-header">
-                    <h3>📅 Weekly Health Report</h3>
-                    <button class="btn-download" onclick="downloadReport('weekly')">⬇️ Download PDF</button>
-                </div>
-                <div class="report-content">
-                    <div id="weekly-content">
-                        <!-- Weekly report content -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Monthly Report -->
-            <div id="monthly-report" class="report-container" style="display: none;">
-                <div class="report-header">
-                    <h3>📅 Monthly Municipal Report</h3>
-                    <button class="btn-download" onclick="downloadReport('monthly')">⬇️ Download PDF</button>
-                </div>
-                <div class="report-content">
-                    <div class="report-stats">
-                        <div class="stat-card">
-                            <h4>Total Hazardous Operations</h4>
-                            <div class="stat-value">156</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>High Risk Locations</h4>
-                            <div class="stat-value">8</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Safety Compliance</h4>
-                            <div class="stat-value">94%</div>
-                        </div>
-                        <div class="stat-card">
-                            <h4>Total Work Hours</h4>
-                            <div class="stat-value">1,248</div>
-                        </div>
-                    </div>
-                    <div class="high-risk-locations">
-                        <h4>High Risk Locations Identified</h4>
-                        <ul>
-                            <li>Manhole MH-45, MG Road - 12 incidents</li>
-                            <li>Drainage Line DL-8, Station Road - 8 incidents</li>
-                            <li>Sewer Line SL-15, Market Area - 7 incidents</li>
-                            <li>Manhole MH-67, Civil Lines - 5 incidents</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Event History Timeline -->
-            <div class="timeline-section">
-                <h3>📜 Event History Timeline</h3>
-                <div id="event-timeline" class="timeline">
-                    <!-- Timeline events will be loaded here -->
-                </div>
-            </div>
-        </section>
     </div>
 
-    <script src="{{ url_for('static', filename='reports.js') }}"></script>
-</body>
-</html>
+    <!-- Daily -->
+    <div id="daily-report" class="report-container-card">
+        <div class="report-header">
+            <div>
+                <h3>Daily operations &amp; vitals audit</h3>
+                <div class="report-date" id="daily-report-date">Loading…</div>
+            </div>
+            <button class="btn-download" onclick="downloadReport('daily')">
+                <i class="fa-solid fa-file-pdf"></i> Download PDF
+            </button>
+        </div>
+        <div class="report-stats">
+            <div class="report-stat-item">
+                <h4>Active workers</h4>
+                <div class="val" id="daily-workers">—</div>
+            </div>
+            <div class="report-stat-item critical">
+                <h4>Life emergencies</h4>
+                <div class="val" id="daily-incidents">—</div>
+            </div>
+            <div class="report-stat-item warning">
+                <h4>Safety alarms</h4>
+                <div class="val" id="daily-alerts">—</div>
+            </div>
+            <div class="report-stat-item">
+                <h4>Rescue dispatches</h4>
+                <div class="val" id="daily-rescues">—</div>
+            </div>
+            <div class="report-stat-item">
+                <h4>Operational hours</h4>
+                <div class="val" id="daily-hours">—</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly -->
+    <div id="weekly-report" class="report-container-card" style="display:none;">
+        <div class="report-header">
+            <div>
+                <h3>Weekly health exposure audit</h3>
+                <div class="report-date" id="weekly-report-date">Loading…</div>
+            </div>
+            <button class="btn-download" onclick="downloadReport('weekly')">
+                <i class="fa-solid fa-file-pdf"></i> Download PDF
+            </button>
+        </div>
+        <div id="weekly-content" class="weekly-table-wrapper"></div>
+    </div>
+
+    <!-- Monthly -->
+    <div id="monthly-report" class="report-container-card" style="display:none;">
+        <div class="report-header">
+            <div>
+                <h3>Monthly municipal compliance report</h3>
+                <div class="report-date" id="monthly-report-date">Loading…</div>
+            </div>
+            <button class="btn-download" onclick="downloadReport('monthly')">
+                <i class="fa-solid fa-file-pdf"></i> Download PDF
+            </button>
+        </div>
+        <div class="report-stats">
+            <div class="report-stat-item">
+                <h4>Hazardous operations</h4>
+                <div class="val" id="monthly-ops">—</div>
+            </div>
+            <div class="report-stat-item critical">
+                <h4>Incident count</h4>
+                <div class="val" id="monthly-incidents">—</div>
+            </div>
+            <div class="report-stat-item">
+                <h4>Safety compliance</h4>
+                <div class="val" id="monthly-compliance">—</div>
+            </div>
+            <div class="report-stat-item">
+                <h4>Avg rescue response</h4>
+                <div class="val" id="monthly-rescue">—</div>
+            </div>
+        </div>
+        <div class="high-risk-locations-box">
+            <h4><i class="fa-solid fa-triangle-exclamation"></i> High-risk locations identified</h4>
+            <ul id="monthly-risk-locations-list"></ul>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='reports.js') }}"></script>
+{% endblock %}

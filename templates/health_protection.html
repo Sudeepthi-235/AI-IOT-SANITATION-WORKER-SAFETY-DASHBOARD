@@ -1,96 +1,90 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Worker Health Protection - Safety Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <header class="dashboard-header">
-        <div class="header-content">
-            <h1>🏛️ Municipal Sanitation Worker Safety Monitoring</h1>
-            <div class="header-info">
-                <span id="current-time"></span>
+{% extends "layout.html" %}
+
+{% block title %}Health Protection — SaniSafe{% endblock %}
+{% block header_title %}Health protection (WEMS){% endblock %}
+
+{% block content %}
+<div class="health-protection-container">
+
+    <!-- Summary cards -->
+    <div class="exposure-summary">
+        <div class="summary-card safe">
+            <i class="fa-solid fa-circle-check icon-large"></i>
+            <div class="summary-details">
+                <h3>Low exposure</h3>
+                <div class="count" id="low-risk-count">0</div>
+                <p>Safe for duty</p>
             </div>
         </div>
-        <nav class="main-nav">
-            <a href="/" class="nav-link">Control Room</a>
-            <a href="/health-protection" class="nav-link active">Health Protection</a>
-            <a href="/reports" class="nav-link">Reports</a>
-        </nav>
-    </header>
-
-    <div class="dashboard-container">
-        <section class="health-section">
-            <h2>🛡️ Worker Exposure Management System (WEMS)</h2>
-            
-            <!-- Exposure Summary -->
-            <div class="exposure-summary">
-                <div class="summary-card">
-                    <h3>Low Risk</h3>
-                    <div class="count" id="low-risk-count">0</div>
-                    <p>Safe for duty</p>
-                </div>
-                <div class="summary-card warning">
-                    <h3>Medium Risk</h3>
-                    <div class="count" id="medium-risk-count">0</div>
-                    <p>Limited duty</p>
-                </div>
-                <div class="summary-card danger">
-                    <h3>High Risk</h3>
-                    <div class="count" id="high-risk-count">0</div>
-                    <p>Rest required</p>
-                </div>
+        <div class="summary-card warning">
+            <i class="fa-solid fa-triangle-exclamation icon-large"></i>
+            <div class="summary-details">
+                <h3>Medium exposure</h3>
+                <div class="count" id="medium-risk-count">0</div>
+                <p>Limited duty required</p>
             </div>
-
-            <!-- Worker Exposure Table -->
-            <div class="table-container">
-                <h3>Weekly Exposure Data</h3>
-                <table class="exposure-table">
-                    <thead>
-                        <tr>
-                            <th>Worker ID</th>
-                            <th>Name</th>
-                            <th>Hazard Hours</th>
-                            <th>Gas Exposures</th>
-                            <th>O₂ Drops</th>
-                            <th>Temp Exposures</th>
-                            <th>Danger Alerts</th>
-                            <th>Risk Score</th>
-                            <th>Risk Level</th>
-                            <th>Recommendation</th>
-                        </tr>
-                    </thead>
-                    <tbody id="exposure-table-body">
-                        <!-- Data will be loaded here -->
-                    </tbody>
-                </table>
+        </div>
+        <div class="summary-card danger">
+            <i class="fa-solid fa-circle-radiation icon-large"></i>
+            <div class="summary-details">
+                <h3>High / critical exposure</h3>
+                <div class="count" id="high-risk-count">0</div>
+                <p>Mandatory rest rotation</p>
             </div>
-
-            <!-- Auto Worker Rotation Panel -->
-            <div class="rotation-panel">
-                <h3>🔄 Recommended Duty Assignment</h3>
-                <div class="rotation-info">
-                    <p>System automatically suggests duty assignments to prevent repeated high-risk exposure</p>
-                </div>
-                <table class="rotation-table">
-                    <thead>
-                        <tr>
-                            <th>Worker</th>
-                            <th>Current Exposure</th>
-                            <th>Recommended Duty</th>
-                            <th>Next Assignment</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rotation-table-body">
-                        <!-- Rotation data will be loaded here -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
+        </div>
     </div>
 
-    <script src="{{ url_for('static', filename='health.js') }}"></script>
-</body>
-</html>
+    <!-- Exposure table -->
+    <div class="table-card">
+        <div class="card-header">
+            <h2>Weekly exposure telemetry</h2>
+            <p>Accumulated safety index calculated from hazardous hours, oxygen drops, gas exposure, and heat logs.</p>
+        </div>
+        <div class="table-container">
+            <table class="exposure-table">
+                <thead>
+                    <tr>
+                        <th>Worker</th>
+                        <th>Hazard hours</th>
+                        <th>Gas exposures</th>
+                        <th>O₂ drops</th>
+                        <th>Temp events</th>
+                        <th>Danger alarms</th>
+                        <th>Exposure index</th>
+                        <th>Risk level</th>
+                        <th>Recommendation</th>
+                    </tr>
+                </thead>
+                <tbody id="exposure-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Rotation panel -->
+    <div class="table-card" style="border-top:3px solid var(--blue);">
+        <div class="card-header">
+            <h2>Intelligent worker rotation</h2>
+            <p>Workers with high exposure indices are automatically paired with lower-exposure colleagues for duty rotation.</p>
+        </div>
+        <div class="table-container">
+            <table class="rotation-table">
+                <thead>
+                    <tr>
+                        <th>Active worker</th>
+                        <th>Exposure level</th>
+                        <th>Duty status</th>
+                        <th>Recommended replacement</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="rotation-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='health.js') }}"></script>
+{% endblock %}

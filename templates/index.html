@@ -1,94 +1,172 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Municipal Sanitation Worker Safety Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-</head>
-<body>
-    <!-- Header -->
-    <header class="dashboard-header">
-        <div class="header-content">
-            <h1>🏛️ Municipal Sanitation Worker Safety Monitoring</h1>
-            <div class="header-info">
-                <span id="current-time"></span>
-                <span class="status-summary">
-                    <span class="status-badge safe">Safe: <span id="safe-count">0</span></span>
-                    <span class="status-badge warning">Warning: <span id="warning-count">0</span></span>
-                    <span class="status-badge danger">Danger: <span id="danger-count">0</span></span>
-                </span>
+{% extends "layout.html" %}
+
+{% block title %}Control Room — SaniSafe{% endblock %}
+{% block header_title %}Control Room{% endblock %}
+
+{% block content %}
+
+<!-- Emergency Banner (shown/hidden by JS) -->
+<div id="emergency-banner" class="emergency-banner-overlay" style="display:none;">
+    <div class="emergency-banner-content">
+        <div class="banner-icon-container">
+            <i class="fa-solid fa-triangle-exclamation flashing-icon"></i>
+        </div>
+        <div class="banner-details">
+            <div class="banner-title">Critical safety emergency detected</div>
+            <div id="emergency-banner-details" class="banner-text"></div>
+        </div>
+        <div class="banner-actions">
+            <button class="btn-banner dispatch" onclick="initiateRescue()">
+                <i class="fa-solid fa-truck-medical"></i> Dispatch rescue
+            </button>
+            <button class="btn-banner voice" onclick="sendVoiceAlert()">
+                <i class="fa-solid fa-bullhorn"></i> Voice alert
+            </button>
+            <button class="btn-banner ack" onclick="closeEmergency()">
+                <i class="fa-solid fa-check"></i> Acknowledge
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="control-room-stack">
+
+    <!-- 1. KPI Summary -->
+    <div class="kpi-cards-container">
+        <div class="kpi-card">
+            <i class="fa-solid fa-users icon"></i>
+            <div class="data">
+                <span class="num" id="kpi-total-val">0</span>
+                <span class="lbl">Total workers</span>
             </div>
         </div>
-        <nav class="main-nav">
-            <a href="/" class="nav-link active">Control Room</a>
-            <a href="/health-protection" class="nav-link">Health Protection</a>
-            <a href="/reports" class="nav-link">Reports</a>
-        </nav>
-    </header>
+        <div class="kpi-card safe">
+            <i class="fa-solid fa-circle-check icon"></i>
+            <div class="data">
+                <span class="num" id="kpi-safe-val">0</span>
+                <span class="lbl">Safe</span>
+            </div>
+        </div>
+        <div class="kpi-card warning">
+            <i class="fa-solid fa-triangle-exclamation icon"></i>
+            <div class="data">
+                <span class="num" id="kpi-warning-val">0</span>
+                <span class="lbl">Warnings</span>
+            </div>
+        </div>
+        <div class="kpi-card danger">
+            <i class="fa-solid fa-circle-radiation icon"></i>
+            <div class="data">
+                <span class="num" id="kpi-danger-val">0</span>
+                <span class="lbl">Critical</span>
+            </div>
+        </div>
+        <div class="kpi-card offline">
+            <i class="fa-solid fa-circle-xmark icon"></i>
+            <div class="data">
+                <span class="num" id="kpi-offline-val">0</span>
+                <span class="lbl">Offline</span>
+            </div>
+        </div>
+    </div>
 
-    <!-- Main Dashboard -->
-    <div class="dashboard-container">
-        <!-- Worker Status Panel -->
-        <section class="workers-panel">
-            <h2>🚨 Live Worker Status</h2>
+    <!-- 2. Live Map -->
+    <section class="map-section-panel">
+        <div class="panel-header">
+            <h2>Worker location map</h2>
+            <a href="/live-map" style="font-size:.78rem; color:var(--blue); font-weight:500;">Open full map</a>
+        </div>
+        <div id="map" class="map-container"></div>
+        <div class="map-legend">
+            <span><span class="dot-legend safe"></span> Safe</span>
+            <span><span class="dot-legend warning"></span> Warning</span>
+            <span><span class="dot-legend danger"></span> Critical</span>
+            <span><span class="dot-legend sewer"></span> Manholes</span>
+            <span><span class="dot-legend rescue"></span> Rescue team</span>
+            <span><span class="dot-legend hazard"></span> Hazard zone</span>
+        </div>
+    </section>
+
+    <!-- 3. Active Alerts -->
+    <section class="alerts-panel">
+        <div class="alerts-panel-header">
+            <h2>Active alerts</h2>
+            <span class="alert-badge" id="alert-count-badge" style="display:none;">
+                <span class="alert-indicator"></span>
+                <span id="alert-count-num">0</span> active
+            </span>
+        </div>
+        <div id="active-alerts-list" class="alerts-list">
+            <div class="no-alerts">
+                <i class="fa-solid fa-circle-check"></i>
+                No active emergencies — all workers within safe parameters
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Worker overview + right sidebar -->
+    <div class="control-main-row">
+
+        <!-- Worker grid -->
+        <section class="workers-section-panel">
+            <div class="section-header">
+                <h2>Worker safety overview</h2>
+                <span class="live-badge"><span class="dot"></span> Live</span>
+            </div>
             <div id="workers-grid" class="workers-grid">
-                <!-- Worker cards will be inserted here -->
+                <!-- Populated by dashboard.js -->
             </div>
         </section>
 
-        <!-- Map View -->
-        <section class="map-panel">
-            <h2>📍 Live Location Map</h2>
-            <div id="map" class="map-container"></div>
-            <div class="map-legend">
-                <span><span class="dot safe"></span> Safe</span>
-                <span><span class="dot warning"></span> Warning</span>
-                <span><span class="dot danger"></span> Danger</span>
-            </div>
-        </section>
-    </div>
+        <!-- Right sidebar -->
+        <div class="control-sidebar">
 
-    <!-- Worker Detail Modal -->
-    <div id="worker-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <div id="worker-details">
-                <!-- Worker details will be loaded here -->
-            </div>
+            <!-- AI Assistant -->
+            <section class="assistant-section-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-robot" style="color:var(--blue);margin-right:6px;"></i>Safety AI assistant</h2>
+                </div>
+                <div class="assistant-chat-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message system">
+                            Hello — I'm the SaniSafe AI assistant. Ask me about worker risk levels, rotation recommendations, or active hazards.
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="assistant-query"
+                               placeholder="Who is at highest risk?"
+                               onkeydown="if(event.key==='Enter') askAssistant()">
+                        <button onclick="askAssistant()"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent events -->
+            <section class="events-section-panel">
+                <div class="panel-header">
+                    <h2>Recent events</h2>
+                    <a href="/event-history" class="view-all-link">View all</a>
+                </div>
+                <div id="event-list" class="event-list">
+                    <!-- Populated by dashboard.js -->
+                </div>
+            </section>
+
         </div>
     </div>
 
-    <!-- Emergency Alert Modal -->
-    <div id="emergency-modal" class="modal emergency-modal">
-        <div class="modal-content emergency-content">
-            <h2>🚨 EMERGENCY ALERT</h2>
-            <div id="emergency-details">
-                <!-- Emergency details will be loaded here -->
-            </div>
-            <div class="emergency-actions">
-                <button class="btn-rescue" onclick="initiateRescue()">🚑 Initiate Rescue</button>
-                <button class="btn-voice" onclick="sendVoiceAlert()">📢 Send Voice Alert</button>
-                <button class="btn-close" onclick="closeEmergency()">Acknowledge</button>
-            </div>
-        </div>
+</div>
+
+<!-- Worker detail modal -->
+<div id="worker-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <div id="worker-details"></div>
     </div>
+</div>
 
-    <!-- Event Log Sidebar -->
-    <aside class="event-log">
-        <h3>📋 Event Log</h3>
-        <div id="event-list" class="event-list">
-            <!-- Events will be listed here -->
-        </div>
-    </aside>
+{% endblock %}
 
-    <!-- Audio Alert -->
-    <audio id="alert-sound" preload="auto">
-        <source src="{{ url_for('static', filename='alert.mp3') }}" type="audio/mpeg">
-    </audio>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
-</body>
-</html>
+{% block scripts %}
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "layout.html" %}
+
+{% block title %}Analytics — SaniSafe{% endblock %}
+{% block header_title %}Safety analytics{% endblock %}
+
+{% block content %}
+<div class="analytics-page-container">
+
+    <div class="report-stats">
+        <div class="stat-card">
+            <i class="fa-solid fa-hard-hat icon-large blue"></i>
+            <div class="stat-content">
+                <h4>Total operations</h4>
+                <div class="stat-value" id="stats-ops">—</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <i class="fa-solid fa-triangle-exclamation icon-large red"></i>
+            <div class="stat-content">
+                <h4>Critical incidents</h4>
+                <div class="stat-value" id="stats-incidents">—</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <i class="fa-solid fa-shield-heart icon-large green"></i>
+            <div class="stat-content">
+                <h4>Safety compliance</h4>
+                <div class="stat-value" id="stats-compliance">—</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <i class="fa-solid fa-truck-medical icon-large blue"></i>
+            <div class="stat-content">
+                <h4>Avg rescue response</h4>
+                <div class="stat-value" id="stats-rescue">—</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="analytics-charts-grid">
+        <div class="chart-card">
+            <h3>Compliance rating — 7-day trend</h3>
+            <div class="chart-wrapper">
+                <canvas id="compliance-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Incidents by operations zone</h3>
+            <div class="chart-wrapper">
+                <canvas id="zone-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Worker risk distribution</h3>
+            <div class="chart-wrapper">
+                <canvas id="risk-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h3>High-risk locations registry</h3>
+            <div class="hazard-locations-list" id="hazard-locations">
+                <!-- Loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let charts = {};
+
+async function loadAnalytics() {
+    try {
+        const res  = await fetch('/api/analytics/data');
+        const data = await res.json();
+
+        document.getElementById('stats-ops').textContent        = data.total_operations;
+        document.getElementById('stats-incidents').textContent  = data.total_incidents;
+        document.getElementById('stats-compliance').textContent = data.compliance_rate + '%';
+        const t = data.avg_rescue_time_seconds;
+        document.getElementById('stats-rescue').textContent     = Math.floor(t / 60) + 'm ' + (t % 60) + 's';
+
+        // Hazard locations list
+        const locList = document.getElementById('hazard-locations');
+        locList.innerHTML = '';
+        data.risk_zones.forEach(z => {
+            const item = document.createElement('div');
+            item.className = 'hazard-item';
+            item.innerHTML = `
+                <span class="zone-badge ${z.risk_level.toLowerCase()}">${z.risk_level}</span>
+                <span class="zone-name">${z.zone}</span>
+                <span class="incidents-count">${z.incidents} alarms</span>`;
+            locList.appendChild(item);
+        });
+
+        initCharts(data);
+    } catch (e) { console.error(e); }
+}
+
+function initCharts(data) {
+    Chart.defaults.color         = '#4A5568';
+    Chart.defaults.borderColor   = '#E2E8F0';
+    Chart.defaults.font.family   = "'Inter', sans-serif";
+    Chart.defaults.font.size     = 12;
+
+    if (charts.compliance) charts.compliance.destroy();
+    charts.compliance = new Chart(document.getElementById('compliance-chart'), {
+        type: 'line',
+        data: {
+            labels: data.compliance_history.labels,
+            datasets: [{
+                label: 'Compliance %',
+                data: data.compliance_history.data,
+                borderColor: '#2563EB',
+                backgroundColor: 'rgba(37,99,235,.08)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.35,
+                pointRadius: 3
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    if (charts.zone) charts.zone.destroy();
+    charts.zone = new Chart(document.getElementById('zone-chart'), {
+        type: 'bar',
+        data: {
+            labels: data.zone_distribution.labels,
+            datasets: [{
+                label: 'Alarms',
+                data: data.zone_distribution.data,
+                backgroundColor: ['#EF4444','#F59E0B','#16A34A'],
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    if (charts.risk) charts.risk.destroy();
+    charts.risk = new Chart(document.getElementById('risk-chart'), {
+        type: 'doughnut',
+        data: {
+            labels: data.risk_distribution.labels,
+            datasets: [{
+                data: data.risk_distribution.data,
+                backgroundColor: ['#16A34A', '#F59E0B', '#F97316', '#EF4444'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 14 } } }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadAnalytics();
+    setInterval(loadAnalytics, 6000);
+});
+</script>
+{% endblock %}

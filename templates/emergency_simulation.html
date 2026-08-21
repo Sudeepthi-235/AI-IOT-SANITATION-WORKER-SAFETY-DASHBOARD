@@ -1,0 +1,124 @@
+{% extends "layout.html" %}
+
+{% block title %}Emergency Simulation — SaniSafe{% endblock %}
+{% block header_title %}Emergency simulation centre{% endblock %}
+
+{% block content %}
+<div class="simulation-container">
+
+    <div class="sim-header-card">
+        <h2>Scenario simulator</h2>
+        <p>
+            Trigger stateful hazard overrides to demonstrate emergency response procedures.
+            All scenarios affect live biometrics and environmental data in real time.
+        </p>
+        <div class="sim-worker-selector">
+            <label for="sim-worker-id">Target worker:</label>
+            <select id="sim-worker-id" class="sim-select">
+                <option value="W001">W001 — Rajesh Kumar (Zone A, MG Road)</option>
+                <option value="W002">W002 — Amit Singh (Zone B, Park Street)</option>
+                <option value="W003">W003 — Suresh Patel (Zone A, Drainage DL-8)</option>
+                <option value="W004" selected>W004 — Vijay Sharma (Zone C, Gandhi Nagar)</option>
+                <option value="W005">W005 — Ramesh Yadav (Zone B, Sewer SL-15)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="sim-actions-grid">
+
+        <div class="sim-card danger" onclick="triggerScenario('gas_leak')">
+            <div class="icon-box"><i class="fa-solid fa-cloud-showers-water"></i></div>
+            <div>
+                <h3>Gas leak incident</h3>
+                <p>H₂S, CO and methane rise rapidly. Oxygen saturation drops.</p>
+            </div>
+        </div>
+
+        <div class="sim-card danger" onclick="triggerScenario('low_spo2')">
+            <div class="icon-box"><i class="fa-solid fa-lungs-virus"></i></div>
+            <div>
+                <h3>Low SpO₂ — hypoxia</h3>
+                <p>Oxygen saturation drops below 85% with elevated heart rate.</p>
+            </div>
+        </div>
+
+        <div class="sim-card danger" onclick="triggerScenario('fall')">
+            <div class="icon-box"><i class="fa-solid fa-person-falling-burst"></i></div>
+            <div>
+                <h3>Fall detection alarm</h3>
+                <p>Wearable accelerometer detects a fall or structural collapse event.</p>
+            </div>
+        </div>
+
+        <div class="sim-card warning" onclick="triggerScenario('high_temp')">
+            <div class="icon-box"><i class="fa-solid fa-temperature-arrow-up"></i></div>
+            <div>
+                <h3>High temperature</h3>
+                <p>Ambient sewer temperature exceeds 42 °C with elevated core body temp.</p>
+            </div>
+        </div>
+
+        <div class="sim-card warning" onclick="triggerScenario('flooding')">
+            <div class="icon-box"><i class="fa-solid fa-house-tsunami"></i></div>
+            <div>
+                <h3>Flooding — water rising</h3>
+                <p>Water level indicator set to HIGH risk from sudden storm water inflow.</p>
+            </div>
+        </div>
+
+        <div class="sim-card danger" onclick="triggerScenario('sos')">
+            <div class="icon-box"><i class="fa-solid fa-kit-medical"></i></div>
+            <div>
+                <h3>SOS panic button</h3>
+                <p>Manual panic button sequence triggered from the worker's smart device.</p>
+            </div>
+        </div>
+
+        <div class="sim-card special" onclick="triggerScenario('multiple')">
+            <div class="icon-box"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div>
+                <h3>Multiple worker emergency</h3>
+                <p>Concurrent overrides: W001 gas leak + W002 fall detection simultaneously.</p>
+            </div>
+        </div>
+
+        <div class="sim-card reset" onclick="triggerScenario('reset')">
+            <div class="icon-box"><i class="fa-solid fa-rotate-left"></i></div>
+            <div>
+                <h3>Reset simulation</h3>
+                <p>Clears all overrides and restores normal biometrics for all workers.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="sim-log-panel">
+        <h3>Event dispatcher log</h3>
+        <div id="sim-log-entries" class="sim-log-entries">
+            <div class="log-entry">System ready. Trigger a scenario above to begin testing.</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+async function triggerScenario(scenario) {
+    const workerId = document.getElementById('sim-worker-id').value;
+    const logPanel = document.getElementById('sim-log-entries');
+    try {
+        const res = await fetch('/api/simulation/trigger', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scenario, worker_id: workerId })
+        });
+        const data = await res.json();
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${scenario === 'reset' ? 'success' : 'critical'}`;
+        entry.innerHTML = `<span class="time">${new Date().toLocaleTimeString()}</span> ${data.message || data.error}`;
+        logPanel.prepend(entry);
+    } catch (e) {
+        console.error('Simulation trigger failed:', e);
+    }
+}
+</script>
+{% endblock %}

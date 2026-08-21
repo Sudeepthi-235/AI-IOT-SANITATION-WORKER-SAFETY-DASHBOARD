@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+
+{% block title %}Live Map — SaniSafe{% endblock %}
+{% block header_title %}Live map{% endblock %}
+
+{% block content %}
+<div class="map-page-layout">
+
+    <div>
+        <section class="map-section-panel">
+            <div class="panel-header">
+                <h2>Worker location tracking</h2>
+            </div>
+            <div id="map" class="map-container-full"></div>
+            <div class="map-legend">
+                <span><span class="dot-legend safe"></span> Safe</span>
+                <span><span class="dot-legend warning"></span> Warning</span>
+                <span><span class="dot-legend danger"></span> Critical</span>
+                <span><span class="dot-legend sewer"></span> Manholes</span>
+                <span><span class="dot-legend rescue"></span> Rescue team</span>
+                <span><span class="dot-legend hazard"></span> Hazard zone</span>
+            </div>
+        </section>
+    </div>
+
+    <aside class="map-sidebar-legend">
+        <h3>Map legend</h3>
+        <div class="legend-list">
+            <div class="legend-item">
+                <span class="marker-dot safe"></span>
+                <span>Safe workers</span>
+            </div>
+            <div class="legend-item">
+                <span class="marker-dot warning"></span>
+                <span>Warning — high exposure</span>
+            </div>
+            <div class="legend-item">
+                <span class="marker-dot danger"></span>
+                <span>Critical — emergency</span>
+            </div>
+            <div class="legend-item">
+                <span class="marker-icon manhole"><i class="fa-solid fa-circle-nodes"></i></span>
+                <span>Sewer nodes / manholes</span>
+            </div>
+            <div class="legend-item">
+                <span class="marker-icon rescue"><i class="fa-solid fa-truck-medical"></i></span>
+                <span>Rescue teams / stations</span>
+            </div>
+            <div class="legend-item">
+                <span class="marker-icon hospital"><i class="fa-solid fa-square-h"></i></span>
+                <span>Hospitals / trauma centres</span>
+            </div>
+            <div class="legend-item">
+                <span class="zone-box hazard"></span>
+                <span>High-risk gas zone</span>
+            </div>
+        </div>
+
+        <div class="map-active-alerts">
+            <h3>Active incidents</h3>
+            <div id="active-map-incidents">
+                <p class="no-incidents"><i class="fa-solid fa-circle-check"></i> No active emergencies</p>
+            </div>
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+{% endblock %}

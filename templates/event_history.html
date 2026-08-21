@@ -1,0 +1,96 @@
+{% extends "layout.html" %}
+
+{% block title %}Event History — SaniSafe{% endblock %}
+{% block header_title %}Event history{% endblock %}
+
+{% block content %}
+<div class="event-history-container">
+
+    <div class="filter-panel-card">
+        <h3>Filter events</h3>
+        <div class="filter-buttons" id="filter-buttons">
+            <button class="btn-filter active" onclick="setFilter('all', this)">All events</button>
+            <button class="btn-filter" onclick="setFilter('critical', this)">Critical</button>
+            <button class="btn-filter" onclick="setFilter('warning', this)">Warnings</button>
+            <button class="btn-filter" onclick="setFilter('sos', this)">SOS signals</button>
+            <button class="btn-filter" onclick="setFilter('gas_leak', this)">Gas events</button>
+            <button class="btn-filter" onclick="setFilter('fall', this)">Falls</button>
+            <button class="btn-filter" onclick="setFilter('system', this)">System logs</button>
+        </div>
+    </div>
+
+    <div class="log-card">
+        <div class="log-header">
+            <h2>System audit trail</h2>
+            <button class="btn-table-action" onclick="loadEventHistory()">
+                <i class="fa-solid fa-rotate"></i> Refresh
+            </button>
+        </div>
+        <div class="timeline-log-list" id="full-event-timeline">
+            <!-- Populated dynamically -->
+        </div>
+    </div>
+
+</div>
+
+<script>
+let currentFilter = 'all';
+
+function setFilter(filterType, btn) {
+    currentFilter = filterType;
+    document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadEventHistory();
+}
+
+async function loadEventHistory() {
+    try {
+        const res  = await fetch('/api/events');
+        const data = await res.json();
+        const timeline = document.getElementById('full-event-timeline');
+        timeline.innerHTML = '';
+
+        if (data.length === 0) {
+            timeline.innerHTML = '<p class="no-events-trail"><i class="fa-solid fa-circle-check"></i> Audit trail is clean — no safety events logged today.</p>';
+            return;
+        }
+
+        const filtered = data.filter(e => {
+            if (currentFilter === 'all')      return true;
+            if (currentFilter === 'critical') return e.severity.toLowerCase() === 'critical';
+            if (currentFilter === 'warning')  return e.severity.toLowerCase() === 'warning';
+            if (currentFilter === 'sos')      return e.type === 'sos';
+            if (currentFilter === 'gas_leak') return e.type === 'gas_leak';
+            if (currentFilter === 'fall')     return e.type === 'fall';
+            if (currentFilter === 'system')   return e.type === 'system' || e.worker_id === 'SYSTEM';
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            timeline.innerHTML = '<p class="no-events-trail"><i class="fa-solid fa-circle-check"></i> No events match the selected filter.</p>';
+            return;
+        }
+
+        [...filtered].reverse().forEach(e => {
+            const item = document.createElement('div');
+            item.className = `audit-log-item ${e.severity.toLowerCase()}`;
+            const timeStr = new Date(e.timestamp).toLocaleString('en-IN');
+            item.innerHTML = `
+                <div class="log-meta">
+                    <span><i class="fa-solid fa-clock"></i> ${timeStr}</span>
+                    <span class="severity-badge ${e.severity.toLowerCase()}">${e.severity}</span>
+                    <span>Worker: ${e.worker_id}</span>
+                    <span><i class="fa-solid fa-location-dot"></i> ${e.location}</span>
+                </div>
+                <div class="log-msg">${e.message}</div>`;
+            timeline.appendChild(item);
+        });
+    } catch (err) { console.error(err); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadEventHistory();
+    setInterval(loadEventHistory, 5000);
+});
+</script>
+{% endblock %}

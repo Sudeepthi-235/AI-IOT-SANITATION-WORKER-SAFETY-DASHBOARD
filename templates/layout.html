@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SaniSafe — Municipal Safety Platform{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <aside class="app-sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-shield-halved brand-logo"></i>
+            <div class="brand-text">
+                <h2>SaniSafe</h2>
+                <span>Safety Platform</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">
+                <i class="fa-solid fa-desktop"></i>
+                <span>Control Room</span>
+            </a>
+            <a href="/live-map" class="nav-item {% if request.path == '/live-map' %}active{% endif %}">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <span>Live Map</span>
+            </a>
+            <a href="/worker-health" class="nav-item {% if request.path == '/worker-health' %}active{% endif %}">
+                <i class="fa-solid fa-heart-pulse"></i>
+                <span>Worker Health</span>
+            </a>
+            <a href="/health-protection" class="nav-item {% if request.path == '/health-protection' %}active{% endif %}">
+                <i class="fa-solid fa-user-shield"></i>
+                <span>Health Protection</span>
+            </a>
+            <a href="/emergency-simulation" class="nav-item {% if request.path == '/emergency-simulation' %}active{% endif %}">
+                <i class="fa-solid fa-vial-virus"></i>
+                <span>Emergency Center</span>
+            </a>
+            <a href="/analytics" class="nav-item {% if request.path == '/analytics' %}active{% endif %}">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Analytics</span>
+            </a>
+            <a href="/reports" class="nav-item {% if request.path == '/reports' %}active{% endif %}">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+                <span>Reports</span>
+            </a>
+            <a href="/event-history" class="nav-item {% if request.path == '/event-history' %}active{% endif %}">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Event History</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="system-health">
+                <span>System</span>
+                <span class="status online"><span class="pulse-dot"></span> Live</span>
+            </div>
+            <div class="sidebar-kpis">
+                <div class="kpi-mini safe">
+                    <span class="num" id="sidebar-safe-count">0</span>
+                    <span class="lbl">Safe</span>
+                </div>
+                <div class="kpi-mini warning">
+                    <span class="num" id="sidebar-warn-count">0</span>
+                    <span class="lbl">Warn</span>
+                </div>
+                <div class="kpi-mini danger">
+                    <span class="num" id="sidebar-crit-count">0</span>
+                    <span class="lbl">Crit</span>
+                </div>
+                <div class="kpi-mini offline">
+                    <span class="num" id="sidebar-off-count">0</span>
+                    <span class="lbl">Off</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="app-main">
+        <header class="app-header">
+            <div class="header-title">
+                <h1>{% block header_title %}Municipal Safety Dashboard{% endblock %}</h1>
+                <p class="subtitle">Real-time sanitation worker monitoring &amp; safety management</p>
+            </div>
+            <div class="current-time-container">
+                <i class="fa-regular fa-clock"></i>
+                <span id="current-time">—</span>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</div>
+
+<audio id="alert-sound" preload="auto">
+    <source src="{{ url_for('static', filename='alert.mp3') }}" type="audio/mpeg">
+</audio>
+
+<script>
+    function updateTime() {
+        const now = new Date();
+        const s = now.toLocaleString('en-IN', {
+            weekday: 'short', year: 'numeric', month: 'short',
+            day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+        const el = document.getElementById('current-time');
+        if (el) el.textContent = s;
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    async function fetchSidebarKPIs() {
+        try {
+            const res = await fetch('/api/workers/status');
+            const data = await res.json();
+            let safe = 0, warning = 0, danger = 0, offline = 0;
+            data.forEach(w => {
+                if      (w.status === 'safe')    safe++;
+                else if (w.status === 'warning') warning++;
+                else if (w.status === 'danger')  danger++;
+                else if (w.status === 'offline') offline++;
+            });
+            const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+            set('sidebar-safe-count', safe);
+            set('sidebar-warn-count', warning);
+            set('sidebar-crit-count', danger);
+            set('sidebar-off-count',  offline);
+        } catch (e) { /* silent */ }
+    }
+    setInterval(fetchSidebarKPIs, 3000);
+    fetchSidebarKPIs();
+</script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
